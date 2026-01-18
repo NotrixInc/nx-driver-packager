@@ -1,4 +1,3 @@
-
 package main
 
 import (
@@ -13,6 +12,10 @@ func main() {
 	packCmd := flag.NewFlagSet("pack", flag.ExitOnError)
 	input := packCmd.String("input", "", "driver directory")
 	out := packCmd.String("out", "", "output .nxpkg file")
+
+	verifyCmd := flag.NewFlagSet("verify", flag.ExitOnError)
+	pkg := verifyCmd.String("pkg", "", "path to .nxpkg file")
+	verifyInput := verifyCmd.String("input", "", "optional driver directory to compare against")
 
 	if len(os.Args) < 2 {
 		fmt.Println("expected 'pack' command")
@@ -31,6 +34,17 @@ func main() {
 			os.Exit(1)
 		}
 		fmt.Println("package created:", *out)
+	case "verify":
+		_ = verifyCmd.Parse(os.Args[2:])
+		if *pkg == "" {
+			fmt.Println("pkg is required")
+			os.Exit(1)
+		}
+		if err := packager.VerifyPackage(*pkg, *verifyInput); err != nil {
+			fmt.Println("error:", err)
+			os.Exit(1)
+		}
+		fmt.Println("package verified:", *pkg)
 	default:
 		fmt.Println("unknown command")
 		os.Exit(1)
