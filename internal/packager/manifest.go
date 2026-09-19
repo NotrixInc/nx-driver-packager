@@ -71,12 +71,27 @@ func (m *Manifest) EffectiveEntrypointPath() string {
 	return m.Entrypoint.Path
 }
 
+// ManifestFileNames are the declarations a package may carry, in the order they
+// win.
+//
+// driver.json is the version 2 format: one file holding the roles, the
+// capability blocks and the endpoints, replacing the four that could previously
+// disagree with each other. manifest.json remains for version 1 packages, and
+// for a version 2 package that also wants to install on a controller predating
+// driver.json.
+var ManifestFileNames = []string{"driver.json", "manifest.json"}
+
 func LoadManifest(dir string) (*Manifest, error) {
-	data, err := os.ReadFile(dir + "/manifest.json")
-	if err != nil {
-		return nil, err
+	var lastErr error
+	for _, name := range ManifestFileNames {
+		data, err := os.ReadFile(dir + "/" + name)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+		return ParseManifest(data)
 	}
-	return ParseManifest(data)
+	return nil, lastErr
 }
 
 func ParseManifest(data []byte) (*Manifest, error) {

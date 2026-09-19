@@ -50,12 +50,16 @@ func indexPackage(pkgFile string) (*packageIndex, []byte, error) {
 		switch hdr.Typeflag {
 		case tar.TypeReg, tar.TypeRegA:
 			idx.files[name] = *hdr
-			if name == "manifest.json" {
+			// driver.json wins where both are present, matching LoadManifest
+			// and the controller's own precedence.
+			if name == "driver.json" || (name == "manifest.json" && manifest == nil) {
 				b, err := io.ReadAll(tr)
 				if err != nil {
 					return nil, nil, err
 				}
-				manifest = b
+				if name == "driver.json" || manifest == nil {
+					manifest = b
+				}
 			}
 		default:
 			// ignore dirs and other types
@@ -110,12 +114,12 @@ func VerifyPackage(pkgFile string, inputDir string) error {
 		return err
 	}
 	if manifestBytes == nil {
-		return fmt.Errorf("manifest.json not found in package")
+		return fmt.Errorf("no driver.json or manifest.json found in package")
 	}
 
 	m, err := ParseManifest(manifestBytes)
 	if err != nil {
-		return fmt.Errorf("invalid manifest.json: %w", err)
+		return fmt.Errorf("invalid driver manifest: %w", err)
 	}
 
 	if m.EffectiveID() == "" || m.Version == "" || m.EffectiveEntrypointPath() == "" {
