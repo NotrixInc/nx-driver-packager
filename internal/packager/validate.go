@@ -24,12 +24,14 @@ func validateOptionalJSONFile(dir string, fileName string) error {
 }
 
 func Validate(dir string, m *Manifest) error {
-	if m.EffectiveID() == "" || m.Version == "" || m.EffectiveEntrypointPath() == "" {
+	if m.EffectiveID() == "" || m.Version == "" || (m.EffectiveEntrypointPath() == "" && !m.Declarative()) {
 		return fmt.Errorf("manifest missing required fields")
 	}
-	ep := filepath.Join(dir, m.EffectiveEntrypointPath())
-	if _, err := os.Stat(ep); err != nil {
-		return fmt.Errorf("entrypoint not found: %s", m.EffectiveEntrypointPath())
+	if !m.Declarative() {
+		ep := filepath.Join(dir, m.EffectiveEntrypointPath())
+		if _, err := os.Stat(ep); err != nil {
+			return fmt.Errorf("entrypoint not found: %s", m.EffectiveEntrypointPath())
+		}
 	}
 
 	// Optional (backward compatible) driver metadata specs.

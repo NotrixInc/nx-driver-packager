@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 )
 
 type Entrypoint struct {
@@ -51,6 +52,16 @@ type Manifest struct {
 
 	// Legacy top-level runtime (new manifests put runtime under entrypoint)
 	Runtime string `json:"runtime"`
+
+	// Tier is "declarative" for a package the controller runs from data — a
+	// declarative IR driver's ir.yaml, a passive AV device's ports — with no
+	// binary and so no entrypoint.
+	Tier string `json:"tier"`
+}
+
+// Declarative reports a package with no binary to run.
+func (m *Manifest) Declarative() bool {
+	return strings.EqualFold(strings.TrimSpace(m.Tier), "declarative")
 }
 
 func (m *Manifest) EffectiveID() string {

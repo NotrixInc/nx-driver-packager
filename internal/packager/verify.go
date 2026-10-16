@@ -122,13 +122,15 @@ func VerifyPackage(pkgFile string, inputDir string) error {
 		return fmt.Errorf("invalid driver manifest: %w", err)
 	}
 
-	if m.EffectiveID() == "" || m.Version == "" || m.EffectiveEntrypointPath() == "" {
+	if m.EffectiveID() == "" || m.Version == "" || (m.EffectiveEntrypointPath() == "" && !m.Declarative()) {
 		return fmt.Errorf("manifest missing required fields")
 	}
 
-	ep := filepath.ToSlash(strings.TrimPrefix(m.EffectiveEntrypointPath(), "./"))
-	if _, ok := idx.files[ep]; !ok {
-		return fmt.Errorf("entrypoint not found in package: %s", m.EffectiveEntrypointPath())
+	if !m.Declarative() {
+		ep := filepath.ToSlash(strings.TrimPrefix(m.EffectiveEntrypointPath(), "./"))
+		if _, ok := idx.files[ep]; !ok {
+			return fmt.Errorf("entrypoint not found in package: %s", m.EffectiveEntrypointPath())
+		}
 	}
 
 	if inputDir != "" {
